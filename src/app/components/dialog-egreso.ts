@@ -566,7 +566,7 @@ validarFolioCentral(tipo:number ){
   this.imprimirCorrectamente=false;
   this.cabecero=false;
    $('.mat-dialog-container').css({'width': '20%','height': '150px','margin':'auto'});
-       $('.mat-dialog-content').css({'overflow': 'hidden'});
+   $('.mat-dialog-content').css({'overflow': 'hidden'});
 
   console.log('Entro en el metodo getConsultaValidacionEgreso');
         
@@ -619,7 +619,8 @@ validarFolioCentral(tipo:number ){
                                                          console.log('importe descpues');
                                                          console.log(this.importe);
                                                          console.log(this.importe2);
-
+          
+                                                         this.cajaDetalleFolios.FiEmpleado = result.ValidaEgresoCajaResult.CajaDetalleFolios[0].CifraEmpleadoDestino;
 
                                                         if (this.cajaDetalleFolios.ValidaHuella){                                                           
                                                             this.pantalla=false; 

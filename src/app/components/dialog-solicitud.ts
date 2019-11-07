@@ -1,4 +1,4 @@
-import {Component, Inject, Input} from '@angular/core';
+import {Component, Inject, Input, OnInit} from '@angular/core';
 import {MatDialog, MAT_DIALOG_DATA} from '@angular/material';
 import {datosCuentasServicio} from  '../services/datosCuentaServicio';
 import {datosCuenta} from '../models/DatosCuenta';
@@ -16,9 +16,26 @@ import {cuentaGastosXML} from '../models/cuentaGastosXML';
 import {DialogOverviewExampleDialog}  from '../components/message';
 import {impresion} from '../models/impresion';
 import { DecimalPipe } from '@angular/common';
+import { Http, Response, Headers, RequestOptions } from '@angular/http';
+import { GLOBAL } from '../services/global';
 
 declare var jquery:any;
 declare var $ :any;
+declare var CJSGlobalObject: any;
+
+export class LoggerGastos implements OnInit{
+  ngOnInit(): void {
+    throw new Error("Method not implemented.");
+  }
+  guardarLog(mensaje) {
+    try{
+      CJSGlobalObject.JSCallBitacora("GTO Log: " + mensaje);
+    }catch(e){
+      console.error(e.message);
+    }
+  }
+}
+
 /**
  * @title Injecting data when opening a dialog
  */
@@ -316,10 +333,11 @@ export class DialogDataSolcitudDialog {
    public ImpuetoPA : any;
    public detIva : any;
    public selectIva : any;
+   public dialogRefCarga;
 
 
 
-  constructor(@Inject(MAT_DIALOG_DATA) public data: any,private datosCuentasServicios: datosCuentasServicio,private _productoService2: ProductoService,private datosGeneralesServicios: datosGeneralesServicio,) {
+  constructor(@Inject(MAT_DIALOG_DATA) public data: any,private datosCuentasServicios: datosCuentasServicio,private _productoService2: ProductoService,private datosGeneralesServicios: datosGeneralesServicio, public dialog: MatDialog, public dialogCarga: MatDialog,public _http: Http,) {
         
 
         console.log('Entro en el constructor DialogDataSolcitudDialog');
@@ -456,6 +474,32 @@ if (data.datosGenerales.esfrontera){
              $('#facturas').val('');
 
   }
+  
+  openDialogCargar(): void {
+ 
+     this.dialogRefCarga = this.dialogCarga.open(DialogCargar, {
+      width: '160px',
+      data: { mensaje: this.mensaje },
+      disableClose:true
+    });
+
+    this.dialogRefCarga.afterClosed().subscribe(result => {
+		/*
+		if (this.error == true) {
+		  this.openDialogMensaje();
+		}
+		else {
+			this.openDialogIngreso();
+		}
+		*/
+    });
+  }
+  
+ closeDialogCargar(): void {
+
+        this.dialogRefCarga.close();
+
+    }
 
 
 cambioDeIva(iva){
@@ -585,7 +629,12 @@ myMethod2(evt){
     var key =  evt.which ;  
     console.log('Valor de key');
     console.log(key);
-    return (key <= 13 || (key >= 48 && key <= 57) );
+    if (this.data.requiere.TiendaCuentas.Parametro.trim()==='Factura'){
+      return (key <= 13 || (key >= 48 && key <= 57) || (key >= 97 && key <= 122) || (key >= 65 && key <= 90) );
+    }else  if (this.data.requiere.TiendaCuentas.Parametro.trim()!='Factura'){
+      return (key <= 13 || (key >= 48 && key <= 57) );
+    }
+    
 
 }
 
@@ -1060,120 +1109,109 @@ var salida:boolean=true;
 
 
     insertaSolicitudGastos(){
+      var loggerGTO = new LoggerGastos();
+      loggerGTO.guardarLog(">>> >>> Entra a insertaSolicitudGastos()");
       this.PantallaImprimir=true;
       this.imprimirCorrectamente=false; 
       this.cabecero=false;
-         $('.mat-dialog-container').css({'width': '20%','height': '150px','margin':'auto'});
-         $('.mat-dialog-content').css({'overflow': 'hidden'});
-
-      console.log('Entro en el metodo insertaSolicitudGastos');   
-
-      /*Cambiar el status de banderafactura*/
-
-
+      $('.mat-dialog-container').css({'width': '20%','height': '150px','margin':'auto'});
+      $('.mat-dialog-content').css({'overflow': 'hidden'});
       if (this.banderafactura==true){
           this.validaFacturacion.Datosparam=this.banderafactura==true?1:0;  
           this.validaFacturacion.Cadenaxml=this.cadenaXML;
       }
+      this.datosGenerales= this.datosGeneralesServicios.getDatosGenerales();
+      var urlGastos = 'http://'+this.datosGenerales.servidor+GLOBAL.urlGastosPV;
+      let solicitud:any = {};
+		  solicitud.Empleado=this.data.datosGenerales.NoEmpleado;
+      solicitud.NoCuenta=this.egresos.noCuenta;
+      solicitud.ImporteGasto=this.egresos.importe;
+      var iva = new Number(this.egresos.importeImpuesto);
+      console.log (iva.toFixed(2));
+      solicitud.ImporteImpuesto=iva.toFixed(2); 
+      solicitud.Valxml= this.data.datosGenerales.fiActivaXML;
+      solicitud.Referencia=this.egresos.factura;
+      solicitud.Observaciones= this.egresos.concepto;
+      solicitud.Justificacion=this.egresos.justificacion;
+      solicitud.FolioRefFletes='';
+      solicitud.Cifracontrol='';
+      solicitud.PresupuestoDisponible=this.data.carga.Disponible;
+      solicitud.estacioTrabajo=this.data.datosGenerales.estacion;
+      if (this.validaFacturacion!= undefined){
+        solicitud.DatosXMl=this.validaFacturacion;	
+      }else{
+        let datosXML = new validaFacturacion('0',0,'','','','','','','',0,0,0,'');
+        solicitud.DatosXMl=datosXML;
+        let flete:any = {};
+        flete.Datosparam=0; //V
+      }
+      let flete:any = {};
+      flete.Datosparam=0; 
+      solicitud.Datosfiscales=flete;
+      loggerGTO.guardarLog("URL: " + urlGastos+ "AfectaAltaSolicitud");
+      loggerGTO.guardarLog("Petición: " + JSON.stringify(solicitud));
+      this._http.post(urlGastos+'AfectaAltaSolicitud', solicitud).subscribe(
+      val => {
+        //console.log('Respuesta correcta: ', JSON.stringify(val));
+        loggerGTO.guardarLog("Respuesta correcta: " + JSON.stringify(val));
+        //console.log('Respuesta correcta: ', JSON.stringify(val.json().AfectaAltaSolicitudResult));
+        var result = val.json();
+        if (result.AfectaAltaSolicitudResult.EsError==false){
+          console.log('Se guardo con exito');
+          this.titulo="Exito";
+          //this.mensaje= "Se registro correctamente la solicitud de gastos para la cuenta "+this.data.carga.Descripcion;
+          this.mensaje= result.AfectaAltaSolicitudResult.Mensaje;
+          
+          this.pantalla=true; 
+          this.boton=true;
+          this.cabecero=true;
 
-     /* console.log('this.validaFacturacion.Datosparam');
-      console.log(this.validaFacturacion.Datosparam);*/
-      
-      /*if (this.data.requiere.TiendaCuentas.Parametro.trim()==='No Empleado'){
-            this.data.datosGenerales.NoEmpleado=this.egresos.factura;
-      }*/
-   
-//this.egresos.noCuenta=this.data.carga.Cuenta===1025?604910:this.data.carga.Cuenta;
+          this.PantallaImprimir=false;
+          this.imprimirCorrectamente=true; 
 
-               console.log('data carga cuenta');
-               console.log(this.data.carga);
-               this._productoService2.getInsertaSolicitudGastos(this.data.datosGenerales,                                                               
-                                                                this.egresos,                                                                
-                                                                this.validaFacturacion,
-                                                                this.data.carga                                                                
-                                                                ).subscribe(
-                                          result => {
-                                                 console.log('RESULTADO');
-                                                 console.log(result);
-                                            if(result.code != 200){
-                                              
-                                         
-                                              console.log(result);                                             
-                                            
-                                               if (result.AfectaAltaSolicitudResult.EsError==false){
-                                                       console.log('Se guardo con exito');
-                                                        this.titulo="Exito";
-                                                        //this.mensaje= "Se registro correctamente la solicitud de gastos para la cuenta "+this.data.carga.Descripcion;
-                                                        this.mensaje= result.AfectaAltaSolicitudResult.Mensaje;
-                                                        
-                                                        this.pantalla=true; 
-                                                        this.boton=true;
-                                                        this.cabecero=true;
+              $('.mat-dialog-container').css({'width': '100%','height': '100%','max-width':'80vw'});
 
-                                                        this.PantallaImprimir=false;
-                                                        this.imprimirCorrectamente=true; 
-
-                                                           $('.mat-dialog-container').css({'width': '100%','height': '100%','max-width':'80vw'});
-
-                                                        if(this.data.carga.Cuenta===604910 || this.data.carga.Cuenta===60491 || this.data.carga.Cuenta===1025 ){
-                                                          /*var impresion:reporteGastos;
-                                                          impresion = new reporteGastos(13796, 7439758, 620070, 1,0,0, '01/23/2018', 'SINIESTROS DE CAJA EN SUCURSAL', ' 255', '', '', 270932, 34476476, '', '','');*/
-                                                              console.log(result.AfectaAltaSolicitudResult.DetCuentasReimpresion);
-                                                              this.cabecero=false;
-                                                              if (result.AfectaAltaSolicitudResult.DetCuentasReimpresion!==null){
-                                                                   $('.mat-dialog-container').css({'width': '20%','height': '150px','margin':'auto'});
-                                                                   $('.mat-dialog-content').css({'overflow': 'hidden'});
-                                                                  this.imprimirEgreso(result.AfectaAltaSolicitudResult.DetCuentasReimpresion[0]);
-                                                                  this.PantallaImprimir=true;
-                                                              }
-                                                              
-                                                        }
-
-                                               }else{
-                                                        $('.mat-dialog-container').css({'width': '100%','height': '100%','max-width':'80vw'});
-                                                        console.log('Se presento un error al guardar la solicitud');
-                                                        this.titulo="Error";
-                                                        this.mensaje= "Se presento un error al guardar la  solicitud de gastos para la cuenta "+"\n" +this.data.carga.Descripcion +"\n"  +result.AfectaAltaSolicitudResult.Mensaje;
-                                                        this.pantalla=true; 
-                                                        this.PantallaImprimir=false;
-                                                         this.boton=true;
-                                                         this.cabecero=true;
-
-                                               }
-
-                                                        
-
-                                             
-                                            }else{
-                                              //   this.closeDialogCargar();
-                                              console.log('Entro');
-                                              //this.ReporteGastos = result.detDetCuentasReimpresion;
-                                              console.log('Entro');
-                                              $('.mat-dialog-container').css({'width': '100%','height': '100%','max-width':'80vw'});
-                                              console.log('Se presento un error al guardar la solicitud');
-                                                        this.titulo="Error";
-                                                        this.mensaje= "Se presento un error al guardar la  solicitud de gastos para la cuenta "+this.data.carga.Descripcion;
-                                                        this.pantalla=true; 
-                                                        this.PantallaImprimir=false;
-                                                         this.boton=true;
-                                              //console.log(this.ReporteGastos);
-                                            }
-
-                                        },
-                                        error => {
-                                          console.log(<any>error);
-                                              $('.mat-dialog-container').css({'width': '100%','height': '100%','max-width':'80vw'});
-                                        }
-
-                                         );
-                         /*Fin de servicio*/ 
-
-
+          if(this.data.carga.Cuenta===604910 || this.data.carga.Cuenta===60491 || this.data.carga.Cuenta===1025 ){
+            /*var impresion:reporteGastos;
+            impresion = new reporteGastos(13796, 7439758, 620070, 1,0,0, '01/23/2018', 'SINIESTROS DE CAJA EN SUCURSAL', ' 255', '', '', 270932, 34476476, '', '','');*/
+                console.log(result.AfectaAltaSolicitudResult.DetCuentasReimpresion);
+                this.cabecero=false;
+                if (result.AfectaAltaSolicitudResult.DetCuentasReimpresion!==null){
+                      $('.mat-dialog-container').css({'width': '20%','height': '150px','margin':'auto'});
+                      $('.mat-dialog-content').css({'overflow': 'hidden'});
+                    this.imprimirEgreso(result.AfectaAltaSolicitudResult.DetCuentasReimpresion[0]);
+                    this.PantallaImprimir=true;
+                }
+                
+          }
+        }else{
+          $('.mat-dialog-container').css({'width': '100%','height': '100%','max-width':'80vw'});
+          console.log('Se presento un error al guardar la solicitud');
+          this.titulo="Error";
+          this.mensaje= "Se presento un error al guardar la  solicitud de gastos para la cuenta "+"\n" +this.data.carga.Descripcion +"\n"  +result.AfectaAltaSolicitudResult.Mensaje;
+          this.pantalla=true; 
+          this.PantallaImprimir=false;
+          this.boton=true;
+          this.cabecero=true;
+        }
+      },
+      error => {
+          console.log("Respuesta Error:  ", error);
+          loggerGTO.guardarLog("Respuesta Error: " + error);
+          console.log(<any>error);
+          $('.mat-dialog-container').css({'width': '100%','height': '100%','max-width':'80vw'});
+      },
+      () => {
+        loggerGTO.guardarLog("Termina Petición ...");
+      }
+      );
+      loggerGTO.guardarLog("<<< <<< Termina insertaSolicitudGastos()");
     }
 
 
     /*Metodo para validar solicitud de gastos*/
     validarSolicitudGastos(){
+		this.openDialogCargar();
 /* this.PantallaImprimir=true;
       this.imprimirCorrectamente=false; 
       this.cabecero=false;
@@ -1246,6 +1284,7 @@ var salida:boolean=true;
                                                         this.boton=false;
                                                           this.retornar=true;
                                             }
+											this.closeDialogCargar();
 
                                         },
                                         error => {

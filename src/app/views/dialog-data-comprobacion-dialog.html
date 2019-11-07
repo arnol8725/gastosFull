@@ -185,17 +185,17 @@
                         <tr *ngFor="let cuentas of data.cuentaGastos">   <!--ReporteGastos -->
                            <td *ngIf="consultaReporte">  <button type="button" class="btn btn-primary" (click)="validarFolioCentral(cuentas);" [disabled]="consulta" ><i class="glyphicon  glyphicon glyphicon-book"></i></button> </td>
                            <td *ngIf="!consultaReporte && datosGenerales.reportVisiblexCuenta==9">  <button type="button" class="btn btn-primary" (click)="mostrarDetalleImpresion(cuentas);" [disabled]="consulta" ><i class="glyphicon  glyphicon glyphicon-book"></i></button> </td>
-                         <td (click)="mostrarMensaje(cuentas);">{{cuentas.FolioAdn      }} </td>  
-                         <td (click)="mostrarMensaje(cuentas);">{{cuentas.FolioSAP           }} </td>
-                         <td (click)="mostrarMensaje(cuentas);">{{cuentas.NoCuenta           }} </td>
-                         <td (click)="mostrarMensaje(cuentas);">{{'$'}}{{cuentas.ImporteGasto | number:'.2-2'}} </td>
-                         <td (click)="mostrarMensaje(cuentas);">{{cuentas.DescTipoGasto      }} </td>
+                         <td>{{cuentas.FolioAdn      }} </td>  
+                         <td>{{cuentas.FolioSAP           }} </td>
+                         <td>{{cuentas.NoCuenta           }} </td>
+                         <td>{{'$'}}{{cuentas.ImporteGasto | number:'.2-2'}} </td>
+                         <td>{{cuentas.DescTipoGasto      }} </td>
                       <!--   <td>{{cuentas.IdTipo             }} </td> -->
-                         <td (click)="mostrarMensaje(cuentas);">{{cuentas.Fecha              }} </td>
-                         <td (click)="mostrarMensaje(cuentas);">{{cuentas.Descripcion        }} </td>
-                         <td (click)="mostrarMensaje(cuentas);">{{cuentas.Referencia         }} </td>
-                         <td (click)="mostrarMensaje(cuentas);">{{cuentas.Justificacion      }} </td>
-                         <td (click)="mostrarMensaje(cuentas);">{{cuentas.Observaciones      }} </td>
+                         <td>{{cuentas.Fecha              }} </td>
+                         <td>{{cuentas.Descripcion        }} </td>
+                         <td>{{cuentas.Referencia         }} </td>
+                         <td>{{cuentas.Justificacion      }} </td>
+                         <td>{{cuentas.Observaciones      }} </td>
                         
 
                          <!--    <td>{{cuentas.Empleado           }} </td> -->

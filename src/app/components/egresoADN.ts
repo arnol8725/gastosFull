@@ -124,8 +124,10 @@ myMethod2(evt){
 
 
    			this.cajaDetalleFolios= new CajaDetalleFolios('','','','','','',0,'','',0,0,0,0,0,0,'',0,0,'','',0,false);   
-
-            this._productoService.getConsultaValidacionEgreso(this.folioADN,this.refempleado,this.tipoOperacion,this.cifracontrol).subscribe(
+			var _folioADN = this.folioADN;
+			this.folioADN = null;
+			this.openDialogCargar();
+            this._productoService.getConsultaValidacionEgreso(_folioADN,this.refempleado,this.tipoOperacion,this.cifracontrol).subscribe(
                                           result => {
                                                  console.log('RESULTADO');
                                                  console.log(result);
@@ -142,27 +144,7 @@ myMethod2(evt){
                                              $('.mat-dialog-container').css({'width': '100%','height': '100%','max-width':'80vw'});
                                                if (result.ValidaEgresoCajaResult.EsError==false ){
                                                        console.log('Se valido con exito');
-                                                       
-                                                        
-
-                                                        this.dialog.open(DialogDataegresoADNDialog, {
-													 		width: '500px',
-											                data: {
-											                  animal: 'panda',
-											                  carga: this.folioADN,
-											                  detEgresoADN : this.cajaDetalleFolios ,
-											                  desc: '',
-											                  generales:this.datosGenerales,
-											                  act:this.detActualizarFiniquito
-
-											                },disableClose:true
-											              });
-
-                                                        
-
-
-                                                       
-
+													   this.error = false;
                                                }else{
 
                                                         console.log('Se presento un error al guardar la solicitud');
@@ -170,7 +152,6 @@ myMethod2(evt){
                                                         this.error=true;
 														this.comentario= result.ValidaEgresoCajaResult.Mensaje;
 														this.mensaje = {error:this.error,comentario:this.comentario,titulo:this.titulos};
-														this.openDialogMensaje();	
                                                }
 
                                                     
@@ -183,8 +164,8 @@ myMethod2(evt){
                                                         this.error=true;
 														this.comentario= "Error al consultar informacion de folioADN"
 														this.mensaje = {error:this.error,comentario:this.comentario,titulo:this.titulos};
-														this.openDialogMensaje();	
                                             }
+											this.closeDialogCargar();
 
                                         },
                                         error => {
@@ -216,6 +197,20 @@ myMethod2(evt){
       this.animal = result;
     });*/
   }
+  
+  openDialogEgreso(): void{
+	this.dialog.open(DialogDataegresoADNDialog, {
+		width: '500px',
+		data: {
+			animal: 'panda',
+			carga: this.folioADN,
+			detEgresoADN : this.cajaDetalleFolios ,
+			desc: '',
+			generales:this.datosGenerales,
+			act:this.detActualizarFiniquito
+		}, disableClose:true
+	});
+  }
 
   	openDialogCargar(): void {
  
@@ -226,8 +221,12 @@ myMethod2(evt){
     });
 
     this.dialogRefCarga.afterClosed().subscribe(result => {
-      console.log('The dialog was closed');
-      this.animal = result;
+		if (this.error == true) {
+			this.openDialogMensaje();
+		}
+		else {
+			this.openDialogEgreso();
+		}
     });
   }
 

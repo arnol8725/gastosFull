@@ -11,6 +11,7 @@ import {datosGenerales} from './models/datosGenerales';
 import {MatDialog, MatDialogRef, MAT_DIALOG_DATA} from '@angular/material';
 import {DialogOverviewExampleDialog}  from './components/message';
 import {menus} from './models/menus';
+import {DialogCargar} from './components/carga';
 
 
 
@@ -50,6 +51,7 @@ export class AppComponent {
    public ListaMenu: menus[]=[];
    public Menu:menus;
    public puestoRespaldo: any;
+   public dialogRefCarga;
 
 
 private _mobileQueryListener: () => void;
@@ -60,6 +62,7 @@ private _mobileQueryListener: () => void;
               
               private dialog: MatDialog,
               changeDetectorRef: ChangeDetectorRef,
+			  public dialogCarga: MatDialog,
              ){
 
   	this.header_color = GLOBAL.header_color;
@@ -67,6 +70,32 @@ private _mobileQueryListener: () => void;
 
 
   }
+  
+    openDialogCargar(): void {
+ 
+     this.dialogRefCarga = this.dialogCarga.open(DialogCargar, {
+      width: '160px',
+      data: { mensaje: this.mensaje },
+      disableClose:true
+    });
+
+    this.dialogRefCarga.afterClosed().subscribe(result => {
+		/*
+		if (this.error == true) {
+		  this.openDialogMensaje();
+		}
+		else {
+			this.openDialogIngreso();
+		}
+		*/
+    });
+  }
+  
+ closeDialogCargar(): void {
+
+        this.dialogRefCarga.close();
+
+    }
 
 
     cargaMenus(id):void {
@@ -175,7 +204,7 @@ private _mobileQueryListener: () => void;
 		//	this.datosCuentasServicios.setPuesto(Number(this.carga));
 
      		this.cuentas = this.datosCuentasServicios.getDatosCuentas();
-
+			this.openDialogCargar();
            this._productoService.getDatosGenerales(this.noEmpl).subscribe(
           result => {
         
@@ -270,7 +299,7 @@ private _mobileQueryListener: () => void;
                       console.log('Entro');
 
                     }
-
+					this.closeDialogCargar();
         },
         error => {
           console.log('');

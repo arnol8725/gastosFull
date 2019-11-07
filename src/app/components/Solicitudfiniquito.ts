@@ -103,7 +103,7 @@ myMethod2(evt){
     var key =  evt.which ;  
     console.log('Valor de key');
     console.log(key);
-    return (key < 13 || (key >= 48 && key <= 57) );
+    return (key <= 13 || (key >= 48 && key <= 57) );
 
 }
 
@@ -183,7 +183,11 @@ myMethod2(evt){
 			this.datosGenerales= this.datosGeneralesServicios.getDatosGenerales();
   if(this.validarFolio==false){
 		this.validarFolio=true;
-        this._productoService.getConsultaFiniquito(this.folioFBP).subscribe(
+		
+		var _folioFBP = this.folioFBP;
+		this.folioFBP = null;
+		
+        this._productoService.getConsultaFiniquito(_folioFBP).subscribe(
           result => {
                  console.log('RESULTADO');
                  console.log(result);

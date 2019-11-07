@@ -4,6 +4,7 @@ import {MatDialog, MatDialogRef, MAT_DIALOG_DATA} from '@angular/material';
 @Component({
   selector: 'cargar',
   templateUrl: '../views/cargar.html',
+  styleUrls: ['../css/cargar.css'],
 })
 export class DialogCargar {
 
